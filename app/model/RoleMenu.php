@@ -11,5 +11,5 @@ use think\model\Pivot;
  */
 class RoleMenu extends Pivot
 {
-    //
+    protected $autoWriteTimestamp = true;
 }

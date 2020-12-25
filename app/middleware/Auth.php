@@ -42,23 +42,30 @@ class Auth
         $testStr = str_replace("\\", "/", preg_match("/\/$/", $url) ? $url : $url . '/');
         $testStr = $testStr = ($testStr==='/')?'//':$testStr;;
 
+        function authCompare($auths,$testStr){
+            $Flag = false;
+            foreach ($auths as $menu) {
+                $reg = $menu['auth'];//匹配判断是否为普通访客开放接口
+                if (!(is_string($reg)&&$reg!=='')) continue;
+                $reg = ($reg==='/')?'//':$reg;
+                $reg = preg_match("/\/$/", $reg) ? $reg : $reg . '/';
+                $reg = preg_replace('/\/:.*?\//',"/.*?/",$reg);
+                $reg = str_replace("/", "\/", $reg);
+                $result = [];
+                if (preg_match("/^".$reg."/", $testStr,$result)){
+                    $Flag = $result[0]===$testStr ;
+                    if ($Flag) {
+                        request()->authMenu = $menu;//记录符合的菜单权限记录
+                        break;
+                    };
+                }
+            }
+            return $Flag;
+        }
 
         //开放接口判断
-        $publicAuth = Role::findOrEmpty(0)->menus->hidden(['pivot'])->visible(['id', 'permission']);
-        $publicFlag = false;
-        foreach ($publicAuth as $menu) {
-            $reg = $menu['permission'];//匹配判断是否为普通访客开放接口
-            $reg = ($reg==='/')?'//':$reg;
-            $reg = preg_match("/\/$/", $reg) ? $reg : $reg . '/';
-            $reg = preg_replace('/\/:.*?\//',"/.*?/",$reg);
-            $reg = str_replace("/", "\/", $reg);
-            $result = [];
-            if (preg_match("/^".$reg."/", $testStr,$result)){
-                $publicFlag = $result[0]===$testStr ;
-                if ($publicFlag) break;
-            }
-
-        }
+        $publicAuth = Role::findOrEmpty(0)->menus->hidden(['pivot'])->visible(['id', 'auth']);
+        $publicFlag = authCompare($publicAuth,$testStr);
 
         //权限接口判断
         if ($userToken && strtotime($userToken->create_time) + $userToken->expires <= $t1) {
@@ -69,39 +76,26 @@ class Auth
         if ($userToken) {
             //重新获取菜单和权限采用绿色通道获取最新信息
             if ($url === '/user/initMenu') {
-                $roles = User::findOrEmpty($userToken->user_id)->roles;
+                //用户->Roles=>menu
+                $roles = User::with(['roles.menus'])->findOrEmpty($userToken->user_id)->roles;
                 foreach ($roles as $role) {
-                    $initMenuAuth = $role->menus->hidden(['pivot'])->visible(['id', 'permission']);
-                    foreach ($initMenuAuth as $menu) {
-                        $reg = $menu['permission'];//匹配判断是否为普通访客开放接口
-                        $reg = ($reg==='/')?'//':$reg;
-                        $reg = preg_match("/\/$/", $reg) ? $reg : $reg . '/';
-                        $reg = preg_replace('/\/:.*?\//',"/.*?/",$reg);
-                        $reg = str_replace("/", "\/", $reg);
-                        $result = [];
-                        if (preg_match("/^".$reg."/", $testStr,$result)){
-                            $publicFlag = $result[0]===$testStr ;
-                            if ($publicFlag) break;
-                        }
-                    }
+                    $initMenuAuth = $role->menus->hidden(['pivot'])->visible(['id', 'auth']);
+                    $privateFlag = authCompare($initMenuAuth,$testStr);
                     if ($privateFlag) break;
                 }
             } else {
                 //否则从缓存中获取
                 $userAuths = UserTokenAuth::where('user_token_id', $userToken->id)->select();//用户的权限表
-                foreach ($userAuths as $auth) {
-                    $privateFlag = $auth['auth'] === $url; //匹配判断是否有权访问非开放接口
-                    $request->dataScope = $auth['data_scope']; //记录数据作用域(0为全部)
-                    if ($privateFlag) break;
-                }
+                $privateFlag = authCompare($userAuths,$testStr);
             }
         }
 
+
         //无权访问
         if (!$publicFlag && !$privateFlag) return $error->forbid();//拒绝访问403
-
         $request->userToken = $userToken;
         $request->userId = $userToken ? $userToken->user_id : null;
+
 
         $res = $next($request);  //分界
 

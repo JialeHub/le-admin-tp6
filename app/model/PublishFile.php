@@ -9,7 +9,7 @@ use think\model\Pivot;
 /**
  * @mixin \think\Model
  */
-class UserRole extends Pivot
+class PublishFile extends Pivot
 {
     protected $autoWriteTimestamp = true;
 }

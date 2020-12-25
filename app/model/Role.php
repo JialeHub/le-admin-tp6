@@ -14,6 +14,7 @@ class Role extends Model
 {
     // 数据转换为驼峰命名
     protected $convertNameToCamel = true;
+    protected $hidden = ['pivot'];
     use SoftDelete;
 
     public function depts()

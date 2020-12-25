@@ -3,6 +3,7 @@ declare (strict_types=1);
 
 namespace app\middleware;
 
+use api\index as Api;
 use \app\model\Log as LogModel;
 use app\model\UserToken;
 
@@ -21,7 +22,7 @@ class Log
         $t1 = microtime(true); //获取请求开始时间
 
         $request->status = 501; //设置默认状态码
-        $request->middleMsg = '——Log';
+        $request->middleMsg = 'Log';
 
         $server = $request->server();
         $query = [
@@ -55,6 +56,13 @@ class Log
 
         $t2 = microtime(true); //获取请求结束时间
         $query['duration'] = $t2 - $t1;
+        //获取IP信息
+        $ip = isset($server['HTTP_X_FORWARDED_FOR']) ? $server['HTTP_X_FORWARDED_FOR'] :
+            (isset($server['REMOTE_ADDR']) ? $server['REMOTE_ADDR'] : '');
+        $api = new Api();
+        $ipInfo = $api->getIPInfo($ip);
+        if (!is_null($ipInfo)) $query['ip_info'] = $ipInfo;
+        if (!is_null($ipInfo) && is_array($ipInfo) && array_key_exists('addr',$ipInfo)) $query['ip_addr'] = $ipInfo['addr'];
         $logModel->save($query);
 
         return $res;

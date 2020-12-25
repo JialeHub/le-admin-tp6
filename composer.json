@@ -25,7 +25,10 @@
         "topthink/think-orm": "^2.0",
         "ext-openssl": "*",
       "ext-json": "*",
-        "topthink/think-worker": "^3.0"
+        "topthink/think-worker": "^3.0",
+      "ext-exif": "*",
+      "ext-curl": "*",
+      "ext-http": "*"
     },
     "require-dev": {
         "symfony/var-dumper": "^4.2",

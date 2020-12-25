@@ -11,5 +11,5 @@ use think\model\Pivot;
  */
 class UserDept extends Pivot
 {
-    //
+    protected $autoWriteTimestamp = true;
 }

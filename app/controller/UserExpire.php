@@ -19,9 +19,8 @@ class UserExpire
         $userIdsByUser = UserDept::where('dept_id',$dept->id )->column('user_id');
         $usersIds = array_merge($userIdsByUser,$userIdsByRole);
         $usersIds = array_merge(array_diff(array_keys(array_flip($usersIds)), [0])) ;//去重、去0
-
         $userToken = new UserToken();
-        $userTokensIds = UserToken::where('user_id','in',$usersIds)->visible(['id'])->select();
+        $userTokensIds = UserToken::field('id')->where('user_id','in',$usersIds)->select();
         $list = [];
         foreach ($userTokensIds as $userTokensId){
             array_push($list,['id'=>$userTokensId->id,'expires'=>1]);
@@ -35,7 +34,7 @@ class UserExpire
         $usersIds = UserRole::where('role_id','in',$rolesIds )->column('user_id');
         $usersIds = array_merge(array_diff(array_keys(array_flip($usersIds)), [0])) ;//去重、去0
         $userToken = new UserToken();
-        $userTokensIds = UserToken::where('user_id','in',$usersIds)->visible(['id'])->select();
+        $userTokensIds = UserToken::field('id')->where('user_id','in',$usersIds)->select();
         $list = [];
         foreach ($userTokensIds as $userTokensId){
             array_push($list,['id'=>$userTokensId->id,'expires'=>1]);
@@ -47,7 +46,7 @@ class UserExpire
         $usersIds = UserRole::where('role_id',$role->id )->column('user_id');
         $usersIds = array_merge(array_diff(array_keys(array_flip($usersIds)), [0])) ;//去重、去0
         $userToken = new UserToken();
-        $userTokensIds = UserToken::where('user_id','in',$usersIds)->visible(['id'])->select();
+        $userTokensIds = UserToken::field('id')->where('user_id','in',$usersIds)->select();
         $list = [];
         foreach ($userTokensIds as $userTokensId){
             array_push($list,['id'=>$userTokensId->id,'expires'=>1]);
@@ -57,7 +56,7 @@ class UserExpire
 
     public function userChange($user){
         $userToken = new UserToken();
-        $userTokensIds = UserToken::where('user_id',$user->id)->visible(['id'])->select();
+        $userTokensIds = UserToken::field('id')->where('user_id',$user->id)->select();
         $list = [];
         foreach ($userTokensIds as $userTokensId){
             array_push($list,['id'=>$userTokensId->id,'expires'=>1]);

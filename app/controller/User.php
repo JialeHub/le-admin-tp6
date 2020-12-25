@@ -26,13 +26,84 @@ class User extends BaseController
      */
     public function index(Request $request)
     {
-//        $list = UserModel::page(1, 10)->select()->hidden(['password']);
-//        $data['list'] = $list;
-        $data['middleMsg'] = $request->middleMsg;
-        $status = 200;
-        $data['msg'] = $request;
+        $page = (int)$request->param('page', 1);//当前页
+        $limit = (int)$request->param('limit', 10);//每页大小
+        if ($limit === -1) $limit = 999999999;
+
+        $utils = new utils();
+        $sortListOri = $request->param('sortList', ['id'=>'desc']);//排序方式
+
+        $sortList = $utils->uncamelizeArrKeys($sortListOri);
+
+        $searchListOri = $request->param('searchList', []);//搜索列表
+        $searchList = $utils->uncamelizeArrKeys($searchListOri);
+
+        if (isset($request->authMenu->dataScope)) {
+            //带权限
+            $dataScope = $request->authMenu['data_scope'];
+            $dataScopeArr = explode(',', $dataScope);
+            $dataScopeArr = array_map(function ($v) {
+                return (int)$v;
+            }, $dataScopeArr);
+            $map1 = ['username', '<>', 'root'];
+            if ($dataScopeArr[0] === 0) {
+                //全部数据域
+                $count = UserModel::where($searchList)->where([$map1])->count();//总数据量
+                $list = UserModel::where($searchList)->where([$map1])->page($page, $limit)->order($sortList)->select()->hidden(['password']);
+            } else {
+                $selectUserIds = UserDept::where('dept_id', 'in', $dataScopeArr)->column('user_id');
+                $map3 = ['user_id', 'in', $selectUserIds];
+                $count = UserModel::whereOr([$map3])->where($searchList)->where([$map1])->count();//总数据量
+                $list = UserModel::whereOr([ $map3])->where($searchList)->where([$map1])->page($page, $limit)->order($sortList)->select()->hidden(['password']);
+            }
+            $data['count'] = $count;
+            $data['list'] = $list;
+            $status = 200;
+            $msg='获取成功';
+        }else{
+            $status = 403;
+            $msg='权限不足，无法访问';
+        }
+        $data['msg'] = $msg;
         $data['status'] = $status;
         return json($data, intval($status));
+    }
+
+    /**
+     * 注册新用户
+     *
+     * @param Request $request
+     * @return Response
+     */
+    public function register(Request $request)
+    {
+        $username = $request->param('username');
+        $userByLogin = UserModel::where('username', $username)->findOrEmpty();
+        $userByEmail = UserModel::where('email', $username)->findOrEmpty();
+        if ($userByLogin->isEmpty() && $userByEmail->isEmpty()){
+            $password = $request->param('password');
+            $rsa = new RSA();
+            $passwordDecrypt = hash('sha3-512', $rsa->decrypt($password)); //des->sha3-512解密
+            $form = [
+                'username'=>$username,
+            ];
+            $user = UserModel::create($form);
+            $sqlPass = hash('sha3-512', ($user->id) . $passwordDecrypt);
+            $user->save([
+                'password' =>$sqlPass,
+                'nickname' =>'未设置昵称',
+                'status' =>1,
+            ]);
+            $status = 201;
+            $data['status'] = $status;
+            $data['msg'] = '注册成功';
+            return json($data, intval($status));
+        }else{
+            $status = 202;
+            $data['status'] = $status;
+            $data['msg'] = '注册失败，该账号已存在';
+            return json($data, intval($status));
+        }
     }
 
     /**
@@ -61,8 +132,11 @@ class User extends BaseController
             $status = 404.1;
             $data['msg'] = '未找到该用户';
         } elseif ($id) {
-            $user = UserModel::findOrEmpty($id);
-            $info = $user->hidden(['password']);
+            $info = $user = UserModel::where($request->userId)->with(['depts' => function ($q) {
+                $q->field(['name']);
+            }, 'roles' => function ($q) {
+                $q->field(['name', 'level', 'data_scope_model']);
+            }])->hidden(['password', 'delete_time', 'delete_id'])->findOrEmpty();
             if (!$user->isEmpty()) {
                 $status = 200;
                 $data['msg'] = '获取成功';
@@ -90,12 +164,13 @@ class User extends BaseController
     public function info(Request $request)
     {
         $data = [];
-        $user = UserModel::findOrEmpty($request->userId);
+        $user = UserModel::where(['id'=>$request->userId])->with(['depts' => function ($q) {
+            $q->field(['name'])->hidden(['pivot']);
+        }, 'roles' => function ($q) {
+            $q->field(['name', 'level', 'data_scope_model'])->hidden(['pivot']);
+        }])->hidden(['password', 'delete_time', 'delete_id', 'pivot'])->findOrEmpty();
         if (!$user->isEmpty()) {
-            $info = $user->hidden(['password', 'delete_time', 'delete_id']);
-            $data['info'] = $info;
-            $data['info']['depts'] = $user->depts->hidden(['pivot'])->visible(['id', 'name']);
-            $data['info']['roles'] = $user->roles->hidden(['pivot'])->visible(['id', 'name', 'level', 'data_scope_model']);
+            $data['info'] = $user;
             $status = 200;
             $data['msg'] = '获取成功';
         } else {
@@ -134,9 +209,6 @@ class User extends BaseController
             $user = $usernameLogin ? $userByLogin : $userByEmail;
             $status = 200;
             $data['token'] = hash('sha3-512', (microtime(true) . $user->id . $user->password));
-            $data['info'] = $user->hidden(['password', 'delete_time', 'delete_id']);
-            $data['info']['depts'] = $user->depts->hidden(['pivot'])->visible(['id', 'name']);
-            $data['info']['roles'] = $user->roles->hidden(['pivot'])->visible(['id', 'name', 'level', 'data_scope_model']);
             $data['rememberMe'] = $rememberMeB;
             $data['status'] = $status;
             $data['msg'] = $usernameLogin ? '用户登陆成功' : '邮箱登陆成功';
@@ -159,7 +231,7 @@ class User extends BaseController
         } elseif ($userByLogin->isEmpty() && $userByEmail->isEmpty()) {
             $status = 401.1;
             $data['status'] = $status;
-            $data['msg'] = '账号不存在，请检查用户名或电子邮箱';
+            $data['msg'] = '账号不存在';
             return json($data, intval($status));
         } else {
             $status = 401.1;
@@ -181,7 +253,7 @@ class User extends BaseController
     public function initMenu(Request $request)
     {
         $data = [];
-        $user = UserModel::findOrEmpty($request->userId);
+        $user = UserModel::with(['roles.menus', 'depts'])->findOrEmpty($request->userId);
         if (!$user->isEmpty()) {
             $roles = $user->roles;
             $utils = new Utils();
@@ -283,15 +355,21 @@ class User extends BaseController
                     }
                 }
             }
+            //排序
+            usort($menuList, function ($a, $b) {
+                if ($a['sort'] == $b['sort']) return 0;
+                return ($a['sort'] < $b['sort']) ? -1 : 1;
+            });
             //批量删除权限
             UserTokenAuth::where('user_token_id', $request->userToken->id)->delete();
             //缓存权限
             $userTokenAuth = new UserTokenAuth();
             $list = [];
             foreach ($menuList as $menu) {
+                if (!(is_string($menu['auth']) && $menu['auth'] !== '')) continue;
                 $res = [
                     'user_token_id' => $request->userToken->id,
-                    'auth' => $menu['permission'],
+                    'auth' => $menu['auth'],
                     'data_scope' => implode(',', $menu['dataScope']),
                     'data_scope_model' => implode(',', $menu['dataScopeModel'])
                 ];
@@ -300,9 +378,10 @@ class User extends BaseController
             $userTokenAuth->saveAll($list);
             //输出路由菜单树
             $tree = $utils->arr2tree($menuList);
-            $data['menu'] = $tree;
+            //return0为不返回菜单，节流
+            if (!$request->has('return')||(int)$request->param('return')!==0) $data['menu'] = $tree;
             $status = 200;
-            $data['msg'] = '获取成功';
+            $data['msg'] = '获取成功；后台权限更新成功；';
         } else {
             $status = 404.1;
             $data['msg'] = '获取失败，无法找到该用户';
@@ -320,8 +399,7 @@ class User extends BaseController
      */
     public function logout(Request $request)
     {
-        if (!$request->param('id')) {
-            $data['userToken'] = $request->userToken;
+        if (!$request->param('id') && $request->userToken) {
             $request->userToken->delete();
             $status = 200;
             $data['msg'] = '您已退出登录';
@@ -343,7 +421,39 @@ class User extends BaseController
     }
 
     /**
-     * 保存更新的资源
+     * 修改用户信息（用户端）
+     *
+     * @param Request $request
+     * @param int $id
+     * @return Response
+     */
+    public function updateInfo(Request $request)
+    {
+        $userId = $request->userId;
+        if ($userId) {
+            $user = UserModel::where('id',$userId)->findOrEmpty();
+            $msg = [];
+            if ($request->has('realname'))$msg['realname']=$request->param('realname');
+            if ($request->has('nickname'))$msg['nickname']=$request->param('nickname');
+            if ($request->has('phone'))$msg['phone']=$request->param('phone');
+            if ($request->has('email'))$msg['email']=$request->param('email');
+            if ($request->has('gender'))$msg['gender']=$request->param('gender');
+            if ($request->has('birthday'))$msg['birthday']=$request->param('birthday');
+            if ($request->has('avatar'))$msg['avatar']=$request->param('avatar');
+            if ($request->has('profile'))$msg['profile']=$request->param('profile');
+            $user->save($msg);
+            $status = 200;
+            $data['msg'] = '信息保存成功';
+        } else {
+            $status = 404.1;
+            $data['msg'] = '未找到用户信息';
+        }
+        $data['status'] = $status;
+        return json($data, intval($status));
+    }
+
+    /**
+     * 修改用户信息（后台）
      *
      * @param Request $request
      * @param int $id
@@ -351,8 +461,54 @@ class User extends BaseController
      */
     public function update(Request $request, $id)
     {
-        $status = 200;
-        $data['msg'] = '编辑成功';
+        $hasPermission = false;
+        $user = UserModel::where('id',$id)->findOrEmpty();
+        if ($user->isEmpty()){
+            $status = 401.1;
+            $msg='找不到此用户';
+        }else{
+            if (isset($request->authMenu->dataScope)) {
+                //带权限
+                $dataScope = $request->authMenu['data_scope'];
+                $dataScopeArr = explode(',', $dataScope);
+                $dataScopeArr = array_map(function ($v) {
+                    return (int)$v;
+                }, $dataScopeArr);
+                if ($dataScopeArr[0] === 0) {
+                    //允许操作所有CreateId
+                    $hasPermission=true;
+                }else{
+                    $createId = $user->createId;
+                    $userDepts = UserDept::where('user_id',$createId)->select();
+                    foreach ($userDepts as $userDept){
+                        if (in_array($userDept->dept_id,$dataScopeArr)){
+                            $hasPermission=true;
+                            break;
+                        }
+                    }
+                }
+            }
+            if ($hasPermission){
+                $userId = $request->userId;
+                if ($request->has('status', 'post')) $user['status'] = $request->param('status');
+                if ($request->has('password', 'post')) {
+                    $rsa = new RSA();
+                    $passwordDecrypt = hash('sha3-512', $rsa->decrypt($request->param('password'))); //des->sha3-512解密
+                    $sqlPass = hash('sha3-512', $id . $passwordDecrypt);
+                    $user['password'] = $sqlPass;
+                }
+                $user['update_id'] = $userId;
+                $user->save();
+                $status = 200;
+                $msg='修改成功';
+            }else{
+                $status = 403.1;
+                $msg='权限不足，无法操作该记录';
+            }
+        }
+
+        $data['status'] = $status;
+        $data['msg'] = $msg;
         return json($data, intval($status));
     }
 

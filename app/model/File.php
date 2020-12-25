@@ -1,5 +1,5 @@
 <?php
-declare (strict_types=1);
+declare (strict_types = 1);
 
 namespace app\model;
 
@@ -9,11 +9,10 @@ use think\model\concern\SoftDelete;
 /**
  * @mixin \think\Model
  */
-class Log extends Model
+class File extends Model
 {
     // 数据转换为驼峰命名
     protected $convertNameToCamel = true;
     use SoftDelete;
-    protected $json = ['ip_info'];
-
+    protected $json = ['info'];
 }

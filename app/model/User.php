@@ -27,27 +27,37 @@ class User extends Model
         return $this->hasMany(UserToken::class);
     }
 
+    public function publish()
+    {
+        return $this->hasMany(Publish::class);
+    }
+
+    public function file()
+    {
+        return $this->hasMany(File::class);
+    }
+
     public static function onAfterInsert($user)
     {
         $userExpire = new UserExpire();
-        $userExpire->userChange($user);
+//        $userExpire->userChange($user);
     }
 
     public static function onAfterWrite($user)
     {
         $userExpire = new UserExpire();
-        $userExpire->userChange($user);
+//        $userExpire->userChange($user);
     }
 
     public static function onBeforeUpdate($user)
     {
         $userExpire = new UserExpire();
-        $userExpire->userChange($user);
+//        $userExpire->userChange($user);
     }
 
     public static function onBeforeDelete($user)
     {
         $userExpire = new UserExpire();
-        $userExpire->userChange($user);
+//        $userExpire->userChange($user);
     }
 }

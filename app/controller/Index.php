@@ -5,12 +5,12 @@ namespace app\controller;
 use app\BaseController;
 use app\model\Log;
 use app\model\Menu;
+use \api\index as Api;
 
 class Index extends BaseController
 {
     public function index()
     {
-        \app\model\Dept::find(1)->delete();
         $status = request()->status === 501 ? 200 : request()->status;
         $data['middle'] = request()->middleMsg;
         $data['status'] = $status;
@@ -24,7 +24,7 @@ class Index extends BaseController
 
     public function log()
     {
-        return json(Log::page(1,10)->select());
+        return json(Log::page(1,10)->order('id','desc')->select());
     }
 
 }
