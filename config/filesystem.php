@@ -19,6 +19,16 @@ return [
             // 可见性
             'visibility' => 'public',
         ],
+        'tempDownload' => [
+            // 磁盘类型
+            'type'       => 'local',
+            // 磁盘路径
+            'root'       => app()->getRootPath() . 'public/tempDownload',
+            // 磁盘路径对应的外部URL路径
+            'url'        => '/tempDownload',
+            // 可见性
+            'visibility' => 'public',
+        ],
         // 更多的磁盘配置信息
     ],
 ];

@@ -28,7 +28,8 @@
         "topthink/think-worker": "^3.0",
       "ext-exif": "*",
       "ext-curl": "*",
-      "ext-http": "*"
+      "ext-http": "*",
+      "ext-zip": "*"
     },
     "require-dev": {
         "symfony/var-dumper": "^4.2",

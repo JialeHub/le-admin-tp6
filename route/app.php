@@ -50,6 +50,12 @@ Route::group(function () {
     Route::group(function () {
         Route::put('publish/update/:id', 'Publish/update')->name('修改发布消息');
         Route::delete('publish/delete/:id', 'Publish/delete')->name('删除发布消息');
+        Route::delete('publish/delete', 'Publish/delete')->name('批量删除发布消息');
+        Route::get('publish/downloadFiles/:id', 'Publish/downloadFiles')->name('批量下载发布消息');
+        Route::post('publish/downloadFiles', 'Publish/downloadFiles')->name('下载发布消息');
+        Route::get('publish/downloadFiles', 'Publish/downloadFiles')->name('下载发布消息');
+        Route::get('publish/collectMe', 'Publish/collectMe')->name('获取自己的分数');
+        Route::get('publish/collect', 'Publish/collect')->name('汇总用户分数');
         Route::resource('publish', 'Publish');
     })->name('动态发布');
 })->middleware(Auth::class)->allowCrossDomain();
