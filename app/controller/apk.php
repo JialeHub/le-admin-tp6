@@ -11,12 +11,17 @@ use utils\index as utils;
 
 class apk extends BaseController
 {
+    public $latest = "1.0.1";
+
     public function index(Request $request){
+        $latest = $this->latest;
         $data=[];
-        $latest = "1.0.0";
         $url = 'http://' . $_SERVER['HTTP_HOST'] . "/apk/download";
         $appidCheck = "__UNI__1127D4B";
-        $note ="新版本更新内容";
+        $note =
+            "* 1.0.1版本更新内容：
+            1.新增发表回复、总分统计;
+            2.修复其他已知的bug;";
 
         $data["code"] = 0;
         if ($request->has('appid') && $request->has('version')) {
@@ -39,11 +44,11 @@ class apk extends BaseController
 
     public function download(){
         $FileDownload=new FileDownload();
-
+        $latest = $this->latest;
         //$file = $_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'].'.apk';
         $utils = new utils();
         $fileRoot = config('filesystem')['disks']['public']['root'].'/';
-        $file = $utils->dirPathFormat($fileRoot . 'apk/GDOUPG_1.0.0.apk');
+        $file = $utils->dirPathFormat($fileRoot . 'apk/GDOUPG_'.$latest.'.apk');
         $name = '';
 
         $flag = $FileDownload->download($file, $name, true);

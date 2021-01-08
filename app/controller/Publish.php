@@ -602,7 +602,6 @@ class Publish
 
     /*
      * 获取用户本人分数(日、周、月、年、总)
-     *
      * */
     public function collectMe(Request $request){
         //筛选
@@ -613,9 +612,9 @@ class Publish
             $data['msg'] = '未找到用户信息';
         }else{
             //总
-            $count = PublishModel::where('id','=',$userId)->count();//总发表量
-            $scoreNull = PublishModel::where('id','=',$userId)->where('score', '=','-1')->count();//未评数
-            $resultScore =PublishModel::where('id','=',$userId)->where('score', '>=', 0);
+            $count = PublishModel::where('user_id','=',$userId)->count();//总发表量
+            $scoreNull = PublishModel::where('user_id','=',$userId)->where('score', '=','-1')->count();//未评数
+            $resultScore =PublishModel::where('user_id','=',$userId)->where('score', '>=', 0);
             $score=[
                 'all'=>['min'=>$resultScore->min('score'),'max'=>$resultScore->max('score'),'sum'=>$resultScore->sum('score'),'avg'=>$resultScore->avg('score')],
                 'year'=>[

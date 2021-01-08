@@ -23,7 +23,7 @@ class Auth
     public function handle($request, \Closure $next)
     {
         $t1 = microtime(true);
-        $request->middleMsg = '中间件信息';
+        $request->middleMsg = '欢迎';
         $error = new Error();
 
         if (cookie('session_id')) {
