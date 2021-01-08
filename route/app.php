@@ -56,6 +56,8 @@ Route::group(function () {
         Route::get('publish/downloadFiles', 'Publish/downloadFiles')->name('下载发布消息');
         Route::get('publish/collectMe', 'Publish/collectMe')->name('获取自己的分数');
         Route::get('publish/collect', 'Publish/collect')->name('汇总用户分数');
+        Route::get('publish/collectExport', 'Publish/collectExport')->name('导出汇总用户分数');
+        Route::get('publish/dataExport', 'Publish/dataExport')->name('导出记录数据');
         Route::resource('publish', 'Publish');
     })->name('动态发布');
 })->middleware(Auth::class)->allowCrossDomain();
