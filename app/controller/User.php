@@ -441,9 +441,32 @@ class User extends BaseController
             if ($request->has('birthday'))$msg['birthday']=$request->param('birthday');
             if ($request->has('avatar'))$msg['avatar']=$request->param('avatar');
             if ($request->has('profile'))$msg['profile']=$request->param('profile');
-            $user->save($msg);
-            $status = 200;
-            $data['msg'] = '信息保存成功';
+
+            if ($request->has('password')){
+                $rsa = new RSA();
+                if ($request->has('passwordOld')){
+                    $passwordDecrypt = hash('sha3-512', $rsa->decrypt($request->param('passwordOld'))); //des->sha3-512解密
+                    $oldPass = hash('sha3-512', $userId . $passwordDecrypt);
+                    if ($user['password']===$oldPass){
+                        $passwordDecrypt = hash('sha3-512', $rsa->decrypt($request->param('password'))); //des->sha3-512解密
+                        $sqlPass = hash('sha3-512', $userId . $passwordDecrypt);
+                        $msg['password'] = $sqlPass;
+                        $user->save($msg);
+                        $status = 200;
+                        $data['msg'] = '信息保存成功';
+                    }else{
+                        $status = 401.2;
+                        $data['msg'] = '旧密码验证失败';
+                    }
+                }else{
+                    $status = 401.2;
+                    $data['msg'] = '请输入旧密码';
+                }
+            }else{
+                $user->save($msg);
+                $status = 200;
+                $data['msg'] = '信息保存成功';
+            }
         } else {
             $status = 404.1;
             $data['msg'] = '未找到用户信息';

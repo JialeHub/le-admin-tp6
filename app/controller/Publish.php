@@ -301,8 +301,8 @@ class Publish
         $sheet->getCellByColumnAndRow(10,1)->setValue('评价');
         $sheet->getCellByColumnAndRow(11,1)->setValue('发表时间');
         $sheet->getCellByColumnAndRow(12,1)->setValue('评价时间');
-        $sheet->getCellByColumnAndRow(13,1)->setValue('标题');
-        $sheet->getCellByColumnAndRow(14,1)->setValue('内容');
+        $sheet->getCellByColumnAndRow(13,1)->setValue('作业天数');
+        $sheet->getCellByColumnAndRow(14,1)->setValue('卖鱼单船号');
         $sheet->getCellByColumnAndRow(15,1)->setValue('IP');
         $sheet->getCellByColumnAndRow(16,1)->setValue('IP地址');
         $sheet->getCellByColumnAndRow(17,1)->setValue('IP信息');
@@ -310,12 +310,12 @@ class Publish
         foreach ($list as $k=>$v){
             $sheet->getCellByColumnAndRow(1,$k+2)->setValue($v['id']);
             $sheet->getCellByColumnAndRow(2,$k+2)->setValue(isset($v['user'])?$v['user']['username']:'');
-            $sheet->getCellByColumnAndRow(3,$k+2)->setValue(json_encode($v['user']));
+            $sheet->getCellByColumnAndRow(3,$k+2)->setValue(json_encode($v['user'],JSON_UNESCAPED_UNICODE));
             $sheet->getCellByColumnAndRow(4,$k+2)->setValue(count($v['file']));
-            $sheet->getCellByColumnAndRow(5,$k+2)->setValue(json_encode($v['file']));
+            $sheet->getCellByColumnAndRow(5,$k+2)->setValue(json_encode($v['file'],JSON_UNESCAPED_UNICODE));
             $sheet->getCellByColumnAndRow(6,$k+2)->setValue($v['location']);
             $sheet->getCellByColumnAndRow(7,$k+2)->setValue($v['locationResAddr']);
-            $sheet->getCellByColumnAndRow(8,$k+2)->setValue(json_encode($v['locationRes']));
+            $sheet->getCellByColumnAndRow(8,$k+2)->setValue(json_encode($v['locationRes'],JSON_UNESCAPED_UNICODE));
             $sheet->getCellByColumnAndRow(9,$k+2)->setValue($v['score']===-1?'':$v['score']);
             $sheet->getCellByColumnAndRow(10,$k+2)->setValue($v['evaluate']);
             $sheet->getCellByColumnAndRow(11,$k+2)->setValue($v['createTime']);
@@ -324,14 +324,15 @@ class Publish
             $sheet->getCellByColumnAndRow(14,$k+2)->setValue($v['content']);
             $sheet->getCellByColumnAndRow(15,$k+2)->setValue($v['ip']);
             $sheet->getCellByColumnAndRow(16,$k+2)->setValue($v['ipAddr']);
-            $sheet->getCellByColumnAndRow(17,$k+2)->setValue(json_encode($v['ipInfo']));
+            $sheet->getCellByColumnAndRow(17,$k+2)->setValue(json_encode($v['ipInfo'],JSON_UNESCAPED_UNICODE));
         }
+
         $sheet->getCellByColumnAndRow(1,count($list)+3)->setValue('排序项：');
-        $sheet->getCellByColumnAndRow(2,count($list)+3)->setValue(json_encode($sortListOri));
+        $sheet->getCellByColumnAndRow(2,count($list)+3)->setValue(json_encode($sortListOri,JSON_UNESCAPED_UNICODE));
         $sheet->getCellByColumnAndRow(1,count($list)+4)->setValue('筛选项：');
-        $sheet->getCellByColumnAndRow(2,count($list)+4)->setValue(json_encode($searchListOri));
+        $sheet->getCellByColumnAndRow(2,count($list)+4)->setValue(json_encode($searchListOri,JSON_UNESCAPED_UNICODE));
         $sheet->getCellByColumnAndRow(1,count($list)+5)->setValue('导出时间：');
-        $sheet->getCellByColumnAndRow(2,count($list)+5)->setValue(json_encode(date("Y-m-d H:i:s")));
+        $sheet->getCellByColumnAndRow(2,count($list)+5)->setValue(json_encode(date("Y-m-d H:i:s"),JSON_UNESCAPED_UNICODE));
         $sheet->getCellByColumnAndRow(1,count($list)+6)->setValue('未评数：');
         $sheet->getCellByColumnAndRow(2,count($list)+6)->setValue($scoreNull);
         $sheet->getCellByColumnAndRow(1,count($list)+7)->setValue('最低分：');
@@ -343,7 +344,7 @@ class Publish
         $sheet->getCellByColumnAndRow(1,count($list)+10)->setValue('总分：');
         $sheet->getCellByColumnAndRow(2,count($list)+10)->setValue($scoreSum);
 
-        $excelFileName = '照片记录_'.md5(json_encode($list) ).'.xlsx';
+        $excelFileName = '照片记录_'.md5(json_encode($list,JSON_UNESCAPED_UNICODE) ).'.xlsx';
         $fileRoot = config('filesystem')['disks']['tempDownload']['root'] . '/';
         $baseUrl = config('filesystem')['disks']['tempDownload']['url'] . '/';
         $tempExcelSrc = $utils->dirPathFormat($fileRoot . $excelFileName);
@@ -571,13 +572,13 @@ class Publish
             $sheet->getCellByColumnAndRow(19,$k+2)->setValue($v['updateTime']);
         }
         $sheet->getCellByColumnAndRow(1,count($list)+3)->setValue('排序项：');
-        $sheet->getCellByColumnAndRow(2,count($list)+3)->setValue(json_encode($sortListOri));
+        $sheet->getCellByColumnAndRow(2,count($list)+3)->setValue(json_encode($sortListOri,JSON_UNESCAPED_UNICODE));
         $sheet->getCellByColumnAndRow(1,count($list)+4)->setValue('筛选项：');
-        $sheet->getCellByColumnAndRow(2,count($list)+4)->setValue(json_encode($searchListOri));
+        $sheet->getCellByColumnAndRow(2,count($list)+4)->setValue(json_encode($searchListOri,JSON_UNESCAPED_UNICODE));
         $sheet->getCellByColumnAndRow(1,count($list)+5)->setValue('导出时间：');
-        $sheet->getCellByColumnAndRow(2,count($list)+5)->setValue(json_encode(date("Y-m-d H:i:s")));
+        $sheet->getCellByColumnAndRow(2,count($list)+5)->setValue(json_encode(date("Y-m-d H:i:s"),JSON_UNESCAPED_UNICODE));
 
-        $excelFileName = '评分汇总_'.md5(json_encode($list) ).'.xlsx';
+        $excelFileName = '评分汇总_'.md5(json_encode($list,JSON_UNESCAPED_UNICODE) ).'.xlsx';
         $fileRoot = config('filesystem')['disks']['tempDownload']['root'] . '/';
         $baseUrl = config('filesystem')['disks']['tempDownload']['url'] . '/';
         $tempExcelSrc = $utils->dirPathFormat($fileRoot . $excelFileName);
@@ -700,6 +701,7 @@ class Publish
         $item['ip'] = $ip;
         if (!is_null($ipInfo)) $item['ip_info'] = $ipInfo;
         if (!is_null($ipInfo) && is_array($ipInfo) && array_key_exists('addr', $ipInfo)) $item['ip_addr'] = $ipInfo['addr'];
+        if (!is_null($ipInfo) && isset($ipInfo->addr)) $item['ip_addr'] = $ipInfo->addr;
         $publishModel = new PublishModel;
         $publishModel->save($item);
 
@@ -860,7 +862,7 @@ class Publish
                     array_push($files, ['src' => $src, 'name' => $fileName]);
                 }
             }
-            $zipFileName = 'pictureFiles_' . md5(json_encode(request()->param('ids'))) . '.zip';
+            $zipFileName = 'pictureFiles_' . md5(json_encode(request()->param('ids')),JSON_UNESCAPED_UNICODE) . '.zip';
         }
         $zip = new \ZipArchive;
         $fileRoot = config('filesystem')['disks']['tempDownload']['root'] . '/';

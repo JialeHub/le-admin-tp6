@@ -11,7 +11,7 @@ use utils\index as utils;
 
 class apk extends BaseController
 {
-    public $latest = "1.0.1";
+    public $latest = "1.0.2";
 
     public function index(Request $request){
         $latest = $this->latest;
@@ -19,9 +19,10 @@ class apk extends BaseController
         $url = 'http://' . $_SERVER['HTTP_HOST'] . "/apk/download";
         $appidCheck = "__UNI__1127D4B";
         $note =
-            "* 1.0.1版本更新内容：
-            1.新增发表回复、总分统计;
-            2.修复其他已知的bug;";
+            "* 1.0.2版本更新内容：
+            1.新增密码修改功能;
+            2.评分总分调整为4分;
+            3.修复其他已知的bug;";
 
         $data["code"] = 0;
         if ($request->has('appid') && $request->has('version')) {
